@@ -1,0 +1,21 @@
+# Cloudflare Workers 配置
+# Food Court Ordering System API
+
+name = "foodcourt-order-api"
+main = "src/index.ts"
+compatibility_date = "2026-02-15"
+
+# Account ID for D1 operations
+account_id = "ff7cf8831935035b1d555d5a39bf7841"
+
+# D1 数据库配置
+[[d1_databases]]
+binding = "DB"
+database_name = "foodcourt_order"
+database_id = "4cd9e763-3cae-4b93-b1b6-8153f6e3df78"
+
+# 环境变量
+[vars]
+ENV = "development"
+DEFAULT_LANGUAGE = "en"
+SUPPORTED_LANGUAGES = "en,zh-CN,zh-TW,ms,id,th,ja,ko"

@@ -1,0 +1,43 @@
+{
+  "name": "foodcourt-order-api",
+  "version": "0.1.0",
+  "description": "Food Court Ordering System API - Cloudflare Workers",
+  "author": "OpenClaw",
+  "license": "MIT",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "esbuild src/index.ts --bundle --outfile=dist/index.js --platform=neutral --format=esm --target=es2020",
+    "build:worker": "esbuild src/index.ts --bundle --outfile=dist/index.js --platform=neutral --format=esm --target=es2020 --loader:.ts=ts",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write src/**/*.ts",
+    "db:migrate": "wrangler d1 execute --remote --file=./schema.sql",
+    "db:seed": "wrangler d1 execute --remote --file=./seed.sql",
+    "db:studio": "wrangler d1 studio"
+  },
+  "dependencies": {
+    "@cloudflare/d1": "^1.0.0",
+    "bcryptjs": "^2.4.3",
+    "hono": "file:hono-4.11.9.tgz",
+    "ioredis": "^5.3.0",
+    "jsonwebtoken": "^9.0.0",
+    "openai": "^4.20.0",
+    "uuid": "^9.0.0",
+    "zod": "file:zod-4.3.6.tgz"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.0",
+    "@types/jsonwebtoken": "^9.0.0",
+    "@types/uuid": "^9.0.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "esbuild": "^0.27.3",
+    "eslint": "^8.55.0",
+    "prettier": "^3.1.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0",
+    "wrangler": "^4.65.0"
+  },
+  "compatibilityDate": "2026-02-15"
+}
