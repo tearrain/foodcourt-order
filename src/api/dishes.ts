@@ -49,6 +49,109 @@ const batchStockSchema = z.object({
 
 export const dishRoutes = new Hono<Context<any>>();
 
+// ==================== Get Recommended Dishes ====================
+// NOTE: Must be registered BEFORE /:id to avoid route conflict
+
+dishRoutes.get('/recommended', async (c) => {
+  const db = c.env.DB;
+  const lang = c.get('lang') || 'en';
+  const foodCourtId = c.req.query('food_court_id');
+  const limit = parseInt(c.req.query('limit') || '10');
+
+  let query = `
+    SELECT
+      d.*,
+      s.name as stall_name
+    FROM dish d
+    LEFT JOIN stall s ON d.stall_id = s.id
+    WHERE d.deleted_at IS NULL
+      AND d.status = 'active'
+      AND d.is_available = 1
+      AND d.is_recommended = 1
+      AND d.is_sold_out = 0
+  `;
+
+  const bindings: any[] = [];
+
+  if (foodCourtId) {
+    query += ` AND s.food_court_id = ?`;
+    bindings.push(foodCourtId);
+  }
+
+  query += `
+    GROUP BY d.id
+    ORDER BY d.avg_rating DESC, d.total_sold DESC
+    LIMIT ?
+  `;
+  bindings.push(limit);
+
+  const result = await db.prepare(query).bind(...bindings).all();
+
+  const translatedResults = (result.results || []).map((dish: any) => {
+    if (lang !== 'zh-CN' && dish.name_en) {
+      return { ...dish, display_name: dish.name_en };
+    }
+    return { ...dish, display_name: dish.name };
+  });
+
+  return c.json(response(translatedResults));
+});
+
+// ==================== Search Dishes ====================
+// NOTE: Must be registered BEFORE /:id to avoid route conflict
+
+dishRoutes.get('/search', async (c) => {
+  const db = c.env.DB;
+  const lang = c.get('lang') || 'en';
+  const q = c.req.query('q');
+  const foodCourtId = c.req.query('food_court_id');
+  const page = parseInt(c.req.query('page') || '1');
+  const limit = Math.min(parseInt(c.req.query('limit') || '20'), 100);
+  const offset = (page - 1) * limit;
+
+  if (!q || q.length < 2) {
+    return c.json(response([]));
+  }
+
+  const searchTerm = `%${q}%`;
+
+  let query = `
+    SELECT
+      d.*,
+      s.name as stall_name
+    FROM dish d
+    LEFT JOIN stall s ON d.stall_id = s.id
+    WHERE d.deleted_at IS NULL
+      AND d.status = 'active'
+      AND d.is_available = 1
+      AND (
+        d.name LIKE ? OR d.name_en LIKE ? OR d.description LIKE ?
+        OR d.description_en LIKE ?
+      )
+  `;
+
+  const bindings: any[] = [searchTerm, searchTerm, searchTerm, searchTerm];
+
+  if (foodCourtId) {
+    query += ` AND s.food_court_id = ?`;
+    bindings.push(foodCourtId);
+  }
+
+  query += ` ORDER BY d.avg_rating DESC, d.total_sold DESC LIMIT ? OFFSET ?`;
+  bindings.push(limit, offset);
+
+  const result = await db.prepare(query).bind(...bindings).all();
+
+  const translatedResults = (result.results || []).map((dish: any) => {
+    if (lang !== 'zh-CN' && dish.name_en) {
+      return { ...dish, display_name: dish.name_en };
+    }
+    return { ...dish, display_name: dish.name };
+  });
+
+  return c.json(response(translatedResults));
+});
+
 // ==================== List Dishes ====================
 
 dishRoutes.get('/', async (c) => {
@@ -57,15 +160,16 @@ dishRoutes.get('/', async (c) => {
   
   // Query params
   const stallId = c.req.query('stall_id');
+  const foodCourtId = c.req.query('food_court_id');
   const category = c.req.query('category');
   const available = c.req.query('available') === 'true';
   const recommended = c.req.query('recommended') === 'true';
   const page = parseInt(c.req.query('page') || '1');
   const limit = Math.min(parseInt(c.req.query('limit') || '20'), 100);
   const offset = (page - 1) * limit;
-  
+
   let query = `
-    SELECT 
+    SELECT
       d.*,
       s.name as stall_name,
       c.name as category_name
@@ -74,9 +178,14 @@ dishRoutes.get('/', async (c) => {
     LEFT JOIN dish_category c ON d.category_id = c.id
     WHERE d.deleted_at IS NULL
   `;
-  
+
   const bindings: any[] = [];
-  
+
+  if (foodCourtId) {
+    query += ` AND s.food_court_id = ?`;
+    bindings.push(foodCourtId);
+  }
+
   if (stallId) {
     query += ` AND d.stall_id = ?`;
     bindings.push(stallId);
@@ -142,96 +251,6 @@ dishRoutes.get('/:id', async (c) => {
     display_name: displayName,
     display_description: displayDescription,
   }));
-});
-
-// ==================== Get Recommended Dishes ====================
-
-dishRoutes.get('/recommended', async (c) => {
-  const db = c.env.DB;
-  const lang = c.get('lang') || 'en';
-  const foodCourtId = c.req.query('food_court_id');
-  const limit = parseInt(c.req.query('limit') || '10');
-  
-  let query = `
-    SELECT 
-      d.*,
-      s.name as stall_name,
-      COUNT(DISTINCT oi.id) as recent_orders
-    FROM dish d
-    LEFT JOIN stall s ON d.stall_id = s.id
-    LEFT JOIN order_item oi ON d.id = oi.dish_id
-    LEFT JOIN user_order uo ON oi.order_id = uo.id
-    WHERE d.deleted_at IS NULL 
-      AND d.status = 'active'
-      AND d.is_available = 1
-      AND d.is_recommended = 1
-      AND d.is_sold_out = 0
-  `;
-  
-  const bindings: any[] = [];
-  
-  if (foodCourtId) {
-    query += ` AND s.food_court_id = ?`;
-    bindings.push(foodCourtId);
-  }
-  
-  query += `
-    GROUP BY d.id
-    ORDER BY d.avg_rating DESC, recent_orders DESC, d.total_sold DESC
-    LIMIT ?
-  `;
-  bindings.push(limit);
-  
-  const result = await db.prepare(query).bind(...bindings).all();
-
-  return c.json(response(result.results || []));
-});
-
-// ==================== Search Dishes ====================
-
-dishRoutes.get('/search', async (c) => {
-  const db = c.env.DB;
-  const lang = c.get('lang') || 'en';
-  const q = c.req.query('q');
-  const foodCourtId = c.req.query('food_court_id');
-  const page = parseInt(c.req.query('page') || '1');
-  const limit = Math.min(parseInt(c.req.query('limit') || '20'), 100);
-  const offset = (page - 1) * limit;
-  
-  if (!q || q.length < 2) {
-    return c.json(response([]));
-  }
-
-  const searchTerm = `%${q}%`;
-
-  let query = `
-    SELECT
-      d.*,
-      s.name as stall_name
-    FROM dish d
-    LEFT JOIN stall s ON d.stall_id = s.id
-    WHERE d.deleted_at IS NULL
-      AND d.status = 'active'
-      AND d.is_available = 1
-      AND (
-        d.name LIKE ? OR d.name_en LIKE ? OR d.description LIKE ?
-        OR d.description_en LIKE ?
-      )
-  `;
-
-  const bindings: any[] = [searchTerm, searchTerm, searchTerm, searchTerm];
-
-  if (foodCourtId) {
-    query += ` AND s.food_court_id = ?`;
-    bindings.push(foodCourtId);
-  }
-
-  query += ` ORDER BY d.avg_rating DESC, d.total_sold DESC LIMIT ? OFFSET ?`;
-  bindings.push(limit, offset);
-
-  const result = await db.prepare(query).bind(...bindings).all();
-
-  return c.json(response(result.results || []));
 });
 
 // ==================== Create Dish ====================
