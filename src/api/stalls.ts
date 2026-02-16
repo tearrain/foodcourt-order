@@ -8,7 +8,7 @@ import { AppType } from '../types';
 import { response } from '../utils/response';
 
 const createStallSchema = z.object({
-  food_court_id: z.string().uuid(),
+  food_court_id: z.string().min(1),
   name: z.string().min(1).max(255),
   name_en: z.string().optional(),
   description: z.string().optional(),
