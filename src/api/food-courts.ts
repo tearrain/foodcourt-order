@@ -4,7 +4,7 @@
 
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { Context } from '../types';
+import { AppType } from '../types';
 import { DB } from '../utils/db';
 import { response } from '../utils/response';
 
@@ -25,7 +25,7 @@ const createFoodCourtSchema = z.object({
 
 const updateFoodCourtSchema = createFoodCourtSchema.partial();
 
-export const foodCourtRoutes = new Hono<Context<any>>();
+export const foodCourtRoutes = new Hono<AppType>();
 
 // ==================== List Food Courts ====================
 

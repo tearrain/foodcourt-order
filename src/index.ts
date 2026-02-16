@@ -26,9 +26,9 @@ import { config } from './config';
 import { AuthService } from './services/auth';
 
 // Types
-import { Env } from './types';
+import { AppType, Env } from './types';
 
-const app = new Hono<{ env: Env }>();
+const app = new Hono<AppType>();
 
 // ==================== Initialize Services ====================
 
@@ -106,9 +106,9 @@ app.use('/api/v1/*', async (c, next) => {
   
   if (token) {
     const result = await auth.verifyToken(token);
-    if (result.success && result.data) {
-      c.set('userId', result.data.userId);
-      c.set('userRole', result.data.role);
+    if (result.valid && result.payload) {
+      c.set('userId', result.payload.userId);
+      c.set('userRole', result.payload.role);
     }
   }
   

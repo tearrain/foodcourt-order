@@ -114,28 +114,48 @@ export class PaymentService {
   // ==================== GrabPay Provider ====================
   
   private createGrabPayProvider() {
+    const env = this.env;
+
+    const getGrabPayToken = async (): Promise<string> => {
+      // GrabPay OAuth
+      const response = await fetch('https://openapi.grab.com/oauth/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          client_id: env.GRABPAY_CLIENT_ID || '',
+          client_secret: env.GRABPAY_CLIENT_SECRET || '',
+          grant_type: 'client_credentials',
+          scope: 'payment',
+        }),
+      });
+      const data: any = await response.json();
+      return data.access_token;
+    };
+
     return {
       async createPayment(req: PaymentRequest): Promise<PaymentResult> {
         // GrabPay OAuth + Create Payment API
-        const token = await this.getGrabPayToken();
-        
+        const token = await getGrabPayToken();
+
         const response = await fetch('https://openapi.grab.com/pay/v2/payment', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
-            'X-Game-Id': this.env.GRABPAY_MERCHANT_ID,
+            'X-Game-Id': env.GRABPAY_MERCHANT_ID || '',
           },
           body: JSON.stringify({
             amount: req.amount,
             currency: req.currency,
-            merchantID: this.env.GRABPAY_MERCHANT_ID,
-            merchantRedirectURL: `${this.env.PAYMENT_SUCCESS_URL}?order_id=${req.orderId}`,
+            merchantID: env.GRABPAY_MERCHANT_ID,
+            merchantRedirectURL: `${env.PAYMENT_SUCCESS_URL}?order_id=${req.orderId}`,
             description: `Order ${req.orderId}`,
           }),
         });
 
-        const data = await response.json();
+        const data: any = await response.json();
         return {
           success: true,
           paymentId: data.paymentID,
@@ -144,30 +164,12 @@ export class PaymentService {
       },
 
       async getPaymentStatus(paymentId: string): Promise<PaymentStatus> {
-        const token = await this.getGrabPayToken();
+        const token = await getGrabPayToken();
         const response = await fetch(`https://openapi.grab.com/pay/v2/payment/${paymentId}`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
-        const data = await response.json();
+        const data: any = await response.json();
         return data.status === 'SUCCESS' ? 'paid' : 'pending';
-      },
-
-      async getGrabPayToken(): Promise<string> {
-        // GrabPay OAuth
-        const response = await fetch('https://openapi.grab.com/oauth/token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams({
-            client_id: this.env.GRABPAY_CLIENT_ID,
-            client_secret: this.env.GRABPAY_CLIENT_SECRET,
-            grant_type: 'client_credentials',
-            scope: 'payment',
-          }),
-        });
-        const data = await response.json();
-        return data.access_token;
       },
 
       async handleWebhook(payload: any): Promise<PaymentWebhook> {

@@ -305,7 +305,7 @@ export class TranslationService {
     sourceLang: string,
     targetLang: string
   ): Promise<string | null> {
-    const key = this.generateCacheKey(text, sourceLang, targetLang);
+    const key = await this.generateCacheKey(text, sourceLang, targetLang);
     const cached = await this.cache.get(key);
     return cached;
   }
@@ -316,7 +316,7 @@ export class TranslationService {
     targetLang: string,
     translated: string
   ): Promise<void> {
-    const key = this.generateCacheKey(text, sourceLang, targetLang);
+    const key = await this.generateCacheKey(text, sourceLang, targetLang);
     await this.cache.put(key, translated, { expirationTtl: Math.floor(this.config.cacheTTL / 1000) });
   }
 

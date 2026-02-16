@@ -4,7 +4,7 @@
 
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { Context } from '../types';
+import { AppType } from '../types';
 import { response } from '../utils/response';
 import { generateUUID } from '../utils/db';
 
@@ -33,7 +33,7 @@ const redeemCouponSchema = z.object({
   order_id: z.string().uuid().optional(),
 });
 
-export const promotionRoutes = new Hono<Context<any>>();
+export const promotionRoutes = new Hono<AppType>();
 
 // ==================== Get Available Promotions ====================
 

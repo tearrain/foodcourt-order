@@ -3,10 +3,10 @@
  */
 
 import { Hono } from 'hono';
-import { Context } from '../types';
+import { AppType } from '../types';
 import { response } from '../utils/response';
 
-export const i18nRoutes = new Hono<Context<any>>();
+export const i18nRoutes = new Hono<AppType>();
 
 // ==================== Get Translations ====================
 

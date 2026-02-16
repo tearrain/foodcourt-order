@@ -3,11 +3,12 @@
  */
 
 import { Hono } from 'hono';
-import { Context, response } from '../utils/response';
+import { response } from '../utils/response';
+import { AppType } from '../types';
 import { z } from 'zod';
 import { PaymentService, PaymentProvider } from '../services/payment';
 
-const paymentRoutes = new Hono<Context>();
+const paymentRoutes = new Hono<AppType>();
 
 // 创建支付
 const createPaymentSchema = z.object({

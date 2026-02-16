@@ -66,10 +66,11 @@ export class AuthService {
       algorithm: 'HS256',
     });
 
+    const refreshOpts = { algorithm: 'HS256' as const, expiresIn: this.refreshExpiresIn as `${number}d` };
     const refreshToken = jwt.sign(
       { userId: user.id, sessionId, type: 'refresh' },
       this.jwtSecret,
-      { algorithm: 'HS256', expiresIn: this.refreshExpiresIn }
+      refreshOpts
     );
 
     // 保存会话到缓存

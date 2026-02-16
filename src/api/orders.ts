@@ -4,7 +4,7 @@
 
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { Context } from '../types';
+import { AppType } from '../types';
 import { response } from '../utils/response';
 import { generateUUID } from '../utils/db';
 
@@ -32,7 +32,7 @@ const cancelOrderSchema = z.object({
   reason: z.string().min(1),
 });
 
-export const orderRoutes = new Hono<Context<any>>();
+export const orderRoutes = new Hono<AppType>();
 
 // ==================== List Orders ====================
 

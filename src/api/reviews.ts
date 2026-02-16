@@ -4,7 +4,7 @@
 
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { Context } from '../types';
+import { AppType } from '../types';
 import { response } from '../utils/response';
 import { generateUUID } from '../utils/db';
 
@@ -22,7 +22,7 @@ const queryReviewsSchema = z.object({
   rating: z.number().min(1).max(5).optional(),
 });
 
-export const reviewRoutes = new Hono<Context<any>>();
+export const reviewRoutes = new Hono<AppType>();
 
 // ==================== Submit Review ====================
 
