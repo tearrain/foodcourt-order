@@ -19,14 +19,26 @@ import { promotionRoutes } from './api/promotions';
 import { i18nRoutes } from './api/i18n';
 import { searchRoutes } from './api/search';
 import { webhookRoutes } from './api/webhooks';
+import { paymentRoutes } from './api/payment';
 
 // Config
 import { config } from './config';
+import { AuthService } from './services/auth';
 
 // Types
 import { Env } from './types';
 
 const app = new Hono<{ env: Env }>();
+
+// ==================== Initialize Services ====================
+
+const getAuthService = (env: Env): AuthService => {
+  return new AuthService(env.DB, env.CACHE, {
+    jwtSecret: env.JWT_SECRET || 'default-secret-change-in-production',
+    jwtExpiresIn: '7d',
+    refreshExpiresIn: '30d',
+  });
+};
 
 // ==================== CORS Configuration ====================
 
@@ -63,6 +75,42 @@ app.use('/*', async (c, next) => {
   await next();
 });
 
+// ==================== Authentication ====================
+
+// 公开接口（无需认证）
+const publicPaths = [
+  '/health',
+  '/api/v1/health',
+  '/api/v1/food-courts',
+  '/api/v1/stalls',
+  '/api/v1/dishes',
+  '/api/v1/i18n',
+  '/api/v1/search',
+];
+
+app.use('/api/v1/*', async (c, next) => {
+  const path = c.req.path;
+  
+  // 公开接口跳过认证
+  if (publicPaths.some(p => path.startsWith(p))) {
+    return await next();
+  }
+  
+  const auth = getAuthService(c.env);
+  const token = c.req.header('Authorization')?.replace('Bearer ', '');
+  
+  if (token) {
+    const result = await auth.verifyToken(token);
+    if (result.success && result.data) {
+      c.set('userId', result.data.userId);
+      c.set('userRole', result.data.role);
+    }
+  }
+  
+  // 对于需要认证的接口，由各 API 自己检查
+  await next();
+});
+
 // ==================== Health Check ====================
 
 app.get('/health', (c) => {
@@ -93,6 +141,7 @@ app.route('/api/v1/promotions', promotionRoutes);
 app.route('/api/v1/i18n', i18nRoutes);
 app.route('/api/v1/search', searchRoutes);
 app.route('/api/v1/webhooks', webhookRoutes);
+app.route('/api/v1/payment', paymentRoutes);
 
 // ==================== Error Handler ====================
 

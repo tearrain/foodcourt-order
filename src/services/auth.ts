@@ -24,7 +24,7 @@ interface User {
 
 export class AuthService {
   private db: D1Database;
-  private cache: KVNamespace;
+  private cache: KVNamespace | null;
   private jwtSecret: string;
   private jwtExpiresIn: string;
   private refreshExpiresIn: string;
@@ -39,7 +39,7 @@ export class AuthService {
     }
   ) {
     this.db = db;
-    this.cache = cache;
+    this.cache = cache || null;
     this.jwtSecret = options.jwtSecret;
     this.jwtExpiresIn = options.jwtExpiresIn || '7d';
     this.refreshExpiresIn = options.refreshExpiresIn || '30d';
@@ -73,7 +73,7 @@ export class AuthService {
     );
 
     // 保存会话到缓存
-    await this.cache.put(
+    await this.cache?.put(
       `session:${sessionId}`,
       JSON.stringify({
         userId: user.id,
@@ -102,7 +102,7 @@ export class AuthService {
       const decoded = jwt.verify(token, this.jwtSecret) as TokenPayload;
       
       // 检查会话是否有效
-      const session = await this.cache.get(`session:${decoded.sessionId}`);
+      const session = await this.cache?.get(`session:${decoded.sessionId}`);
       if (!session) {
         return { valid: false, payload: null, error: 'Session expired' };
       }
@@ -158,7 +158,7 @@ export class AuthService {
   // ==================== Token 注销 ====================
 
   async logout(sessionId: string): Promise<void> {
-    await this.cache.delete(`session:${sessionId}`);
+    await this.cache?.delete(`session:${sessionId}`);
   }
 
   // ==================== 权限检查 ====================

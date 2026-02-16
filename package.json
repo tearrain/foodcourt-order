@@ -20,12 +20,12 @@
   "dependencies": {
     "@cloudflare/d1": "^1.0.0",
     "bcryptjs": "^2.4.3",
-    "hono": "file:hono-4.11.9.tgz",
+    "hono": "^4.11.9",
     "ioredis": "^5.3.0",
     "jsonwebtoken": "^9.0.0",
     "openai": "^4.20.0",
     "uuid": "^9.0.0",
-    "zod": "file:zod-4.3.6.tgz"
+    "zod": "^3.22.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.0",

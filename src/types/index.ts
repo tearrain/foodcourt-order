@@ -3,12 +3,16 @@
  */
 
 import { D1Database } from '@cloudflare/workers-types';
+import { KVNamespace } from '@cloudflare/workers-types';
 
 // ==================== Environment ====================
 
 export interface Env {
   // D1 Database
   DB: D1Database;
+  
+  // KV Cache
+  CACHE: KVNamespace;
   
   // Environment Variables
   ENV: string;

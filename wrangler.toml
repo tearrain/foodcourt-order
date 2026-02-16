@@ -4,6 +4,7 @@
 name = "foodcourt-order-api"
 main = "src/index.ts"
 compatibility_date = "2026-02-15"
+compatibility_flags = ["nodejs_compat"]
 
 # Account ID for D1 operations
 account_id = "ff7cf8831935035b1d555d5a39bf7841"
@@ -19,3 +20,18 @@ database_id = "4cd9e763-3cae-4b93-b1b6-8153f6e3df78"
 ENV = "development"
 DEFAULT_LANGUAGE = "en"
 SUPPORTED_LANGUAGES = "en,zh-CN,zh-TW,ms,id,th,ja,ko"
+JWT_SECRET = "fc-order-secret-change-in-production-2026"
+
+# 支付配置
+# Stripe
+STRIPE_SECRET_KEY = ""
+STRIPE_WEBHOOK_SECRET = ""
+
+# GrabPay (东南亚)
+GRABPAY_MERCHANT_ID = ""
+GRABPAY_CLIENT_ID = ""
+GRABPAY_CLIENT_SECRET = ""
+
+# 支付回调地址
+PAYMENT_SUCCESS_URL = "https://your-domain.com/payment/success"
+PAYMENT_CANCEL_URL = "https://your-domain.com/payment/cancel"
