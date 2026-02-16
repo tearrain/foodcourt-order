@@ -1,4 +1,4 @@
-# Cloudflare Workers 配置
+# Cloudflare Workers Configuration
 # Food Court Ordering System API
 
 name = "foodcourt-order-api"
@@ -6,32 +6,36 @@ main = "src/index.ts"
 compatibility_date = "2026-02-15"
 compatibility_flags = ["nodejs_compat"]
 
-# Account ID for D1 operations
-account_id = "ff7cf8831935035b1d555d5a39bf7841"
-
-# D1 数据库配置
+# D1 Database - Create with: wrangler d1 create foodcourt_order
+# Then update the database_id below
 [[d1_databases]]
 binding = "DB"
 database_name = "foodcourt_order"
-database_id = "4cd9e763-3cae-4b93-b1b6-8153f6e3df78"
+database_id = "YOUR_D1_DATABASE_ID"
 
-# 环境变量
+# KV Namespace - Create with: wrangler kv namespace create CACHE
+# [[kv_namespaces]]
+# binding = "CACHE"
+# id = "YOUR_KV_NAMESPACE_ID"
+
+# Environment Variables
 [vars]
 ENV = "development"
 DEFAULT_LANGUAGE = "en"
 SUPPORTED_LANGUAGES = "en,zh-CN,zh-TW,ms,id,th,ja,ko"
-JWT_SECRET = "fc-order-secret-change-in-production-2026"
 
-# 支付配置
-# Stripe
-STRIPE_SECRET_KEY = ""
-STRIPE_WEBHOOK_SECRET = ""
+# IMPORTANT: Set secrets via CLI, not here:
+#   wrangler secret put JWT_SECRET
+#   wrangler secret put STRIPE_SECRET_KEY
+#   wrangler secret put STRIPE_WEBHOOK_SECRET
+#   wrangler secret put GRABPAY_MERCHANT_ID
+#   wrangler secret put GRABPAY_CLIENT_ID
+#   wrangler secret put GRABPAY_CLIENT_SECRET
 
-# GrabPay (东南亚)
-GRABPAY_MERCHANT_ID = ""
-GRABPAY_CLIENT_ID = ""
-GRABPAY_CLIENT_SECRET = ""
-
-# 支付回调地址
+# Payment callback URLs (update with your domain)
 PAYMENT_SUCCESS_URL = "https://your-domain.com/payment/success"
 PAYMENT_CANCEL_URL = "https://your-domain.com/payment/cancel"
+
+# Production environment
+[env.production]
+vars = { ENV = "production" }
