@@ -4,7 +4,7 @@
 
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { Context } from '../types';
+import { AppType } from '../types';
 import { response } from '../utils/response';
 
 const createStallSchema = z.object({
@@ -22,7 +22,7 @@ const createStallSchema = z.object({
   sort_order: z.number().int().default(0),
 });
 
-export const stallRoutes = new Hono<Context<any>>();
+export const stallRoutes = new Hono<AppType>();
 
 // ==================== List Stalls ====================
 

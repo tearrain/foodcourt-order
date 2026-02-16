@@ -4,7 +4,7 @@
 
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { Context } from '../types';
+import { AppType } from '../types';
 import { response } from '../utils/response';
 
 // Validation Schemas
@@ -32,7 +32,7 @@ const batchAddToCartSchema = z.object({
   })),
 });
 
-export const cartRoutes = new Hono<Context<any>>();
+export const cartRoutes = new Hono<AppType>();
 
 // ==================== Get Cart ====================
 

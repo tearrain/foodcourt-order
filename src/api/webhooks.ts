@@ -3,11 +3,11 @@
  */
 
 import { Hono } from 'hono';
-import { Context } from '../types';
+import { AppType } from '../types';
 import { response } from '../utils/response';
 import { generateUUID } from '../utils/db';
 
-export const webhookRoutes = new Hono<Context<any>>();
+export const webhookRoutes = new Hono<AppType>();
 
 // ==================== Payment Webhook ====================
 

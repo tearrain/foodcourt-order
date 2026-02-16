@@ -44,14 +44,26 @@ export function error(
   return response(null, code, message, details);
 }
 
+interface PaginatedData<T> {
+  data: T[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
 export function paginated<T>(
   data: T[],
   page: number,
   limit: number,
   total: number
-): ResponseData<T[]> {
+): ResponseData<PaginatedData<T>> {
   const totalPages = Math.ceil(total / limit);
-  
+
   return response({
     data,
     meta: {

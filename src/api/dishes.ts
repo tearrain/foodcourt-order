@@ -4,7 +4,7 @@
 
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { Context } from '../types';
+import { AppType } from '../types';
 import { response } from '../utils/response';
 import { TranslationService } from '../services/translation';
 
@@ -47,7 +47,7 @@ const batchStockSchema = z.object({
   })),
 });
 
-export const dishRoutes = new Hono<Context<any>>();
+export const dishRoutes = new Hono<AppType>();
 
 // ==================== Get Recommended Dishes ====================
 // NOTE: Must be registered BEFORE /:id to avoid route conflict

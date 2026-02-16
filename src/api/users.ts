@@ -4,7 +4,7 @@
 
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { Context } from '../types';
+import { AppType } from '../types';
 import { response } from '../utils/response';
 import { generateUUID } from '../utils/db';
 
@@ -31,7 +31,7 @@ const createAddressSchema = z.object({
 
 const updateAddressSchema = createAddressSchema.partial();
 
-export const userRoutes = new Hono<Context<any>>();
+export const userRoutes = new Hono<AppType>();
 
 // ==================== Get Current User ====================
 
