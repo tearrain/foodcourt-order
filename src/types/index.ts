@@ -10,33 +10,36 @@ import { KVNamespace } from '@cloudflare/workers-types';
 export interface Env {
   // D1 Database
   DB: D1Database;
-  
+
   // KV Cache
   CACHE: KVNamespace;
-  
+
   // Environment Variables
   ENV: string;
   DEFAULT_LANGUAGE: string;
   SUPPORTED_LANGUAGES: string;
   JWT_SECRET: string;
   OPENAI_API_KEY: string;
+
+  // Payment (optional secrets)
+  STRIPE_SECRET_KEY?: string;
+  GRABPAY_MERCHANT_ID?: string;
+  GRABPAY_CLIENT_ID?: string;
+  GRABPAY_CLIENT_SECRET?: string;
+  PAYMENT_SUCCESS_URL?: string;
 }
 
-// ==================== Context ====================
+// ==================== Hono App Type ====================
 
-export interface Context<T extends Env = Env> {
-  env: T;
-  req: {
-    header(name: string): string | null;
-    json(): Promise<any>;
-    parseBody(): Promise<any>;
+export type AppType = {
+  Bindings: Env;
+  Variables: {
+    lang: string;
+    sessionId: string;
+    userId: string;
+    userRole: string;
   };
-  set(key: string, value: any): void;
-  get(key: string): any;
-  json(data: any, status?: number): Response;
-  html(html: string, status?: number): Response;
-  redirect(url: string, status?: number): Response;
-}
+};
 
 // ==================== Common ====================
 
