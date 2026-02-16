@@ -10,6 +10,9 @@ dist/
 frontend/dist/
 admin/dist/
 
+# TypeScript build info
+*.tsbuildinfo
+
 # IDE
 .vscode/
 .idea/
