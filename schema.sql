@@ -22,17 +22,25 @@ CREATE TABLE IF NOT EXISTS food_court (
   contact_phone TEXT,
   contact_email TEXT,
   image_url TEXT,
+  logo_url TEXT,
+  currency TEXT DEFAULT 'MYR',
+  tax_rate REAL DEFAULT 6.00,
+  platform_commission_rate REAL DEFAULT 10.00,
   avg_rating REAL DEFAULT 0,
   total_reviews INTEGER DEFAULT 0,
   total_orders INTEGER DEFAULT 0,
   stall_count INTEGER DEFAULT 0,
   is_active INTEGER DEFAULT 1,
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'suspended')),
   created_at TEXT DEFAULT (datetime('now')),
-  updated_at TEXT DEFAULT (datetime('now'))
+  updated_at TEXT DEFAULT (datetime('now')),
+  deleted_at TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_food_court_location ON food_court(latitude, longitude);
 CREATE INDEX IF NOT EXISTS idx_food_court_active ON food_court(is_active);
+CREATE INDEX IF NOT EXISTS idx_food_court_status ON food_court(status);
+CREATE INDEX IF NOT EXISTS idx_food_court_deleted ON food_court(deleted_at);
 
 -- ============================================================
 -- 2. 档口表
@@ -57,12 +65,14 @@ CREATE TABLE IF NOT EXISTS stall (
   sort_order INTEGER DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now')),
+  deleted_at TEXT,
   FOREIGN KEY (food_court_id) REFERENCES food_court(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_stall_food_court ON stall(food_court_id);
 CREATE INDEX IF NOT EXISTS idx_stall_cuisine ON stall(cuisine_type);
 CREATE INDEX IF NOT EXISTS idx_stall_active ON stall(is_active);
+CREATE INDEX IF NOT EXISTS idx_stall_deleted ON stall(deleted_at);
 
 -- ============================================================
 -- 3. 菜品分类表
@@ -132,11 +142,12 @@ CREATE TABLE IF NOT EXISTS dish (
   avg_rating REAL DEFAULT 0,
   total_reviews INTEGER DEFAULT 0,
   total_sold INTEGER DEFAULT 0,
-  
+
   -- 时间戳
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now')),
   deleted_at TEXT,
+  last_restock_at TEXT,
   
   FOREIGN KEY (stall_id) REFERENCES stall(id) ON DELETE CASCADE,
   FOREIGN KEY (category_id) REFERENCES dish_category(id) ON DELETE SET NULL
@@ -197,10 +208,15 @@ CREATE TABLE IF NOT EXISTS "user" (
   id TEXT PRIMARY KEY,
   phone TEXT UNIQUE,
   email TEXT UNIQUE,
+  name TEXT,
   nickname TEXT,
   avatar_url TEXT,
   preferred_language TEXT DEFAULT 'en',
   role TEXT DEFAULT 'user' CHECK (role IN ('user', 'stall_admin', 'food_court_admin', 'super_admin')),
+  membership_level TEXT DEFAULT 'bronze' CHECK (membership_level IN ('bronze', 'silver', 'gold', 'platinum')),
+  membership_points INTEGER DEFAULT 0,
+  total_orders INTEGER DEFAULT 0,
+  total_spent REAL DEFAULT 0,
   is_verified INTEGER DEFAULT 0,
   is_active INTEGER DEFAULT 1,
   last_login_at TEXT,
@@ -217,11 +233,16 @@ CREATE INDEX IF NOT EXISTS idx_user_email ON "user"(email);
 CREATE TABLE IF NOT EXISTS user_address (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
+  label TEXT,
   name TEXT NOT NULL,
   phone TEXT NOT NULL,
-  address_line1 TEXT NOT NULL,
+  receiver_name TEXT,
+  receiver_phone TEXT,
+  address TEXT,
+  address_line1 TEXT,
   address_line2 TEXT,
-  city TEXT NOT NULL,
+  city TEXT,
+  district TEXT,
   state TEXT,
   postal_code TEXT,
   country TEXT DEFAULT 'Malaysia',
@@ -230,6 +251,7 @@ CREATE TABLE IF NOT EXISTS user_address (
   is_default INTEGER DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now')),
+  deleted_at TEXT,
   FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
 );
 
@@ -263,6 +285,8 @@ CREATE TABLE IF NOT EXISTS user_order (
   payment_channel TEXT,
   payment_status TEXT DEFAULT 'pending' CHECK (payment_status IN ('pending', 'processing', 'paid', 'failed', 'refunded', 'cancelled')),
   payment_id TEXT,
+  transaction_id TEXT,
+  paid_amount REAL DEFAULT 0,
   paid_at TEXT,
   
   -- 状态
@@ -284,6 +308,9 @@ CREATE TABLE IF NOT EXISTS user_order (
   estimated_delivery_time TEXT,
   actual_delivery_time TEXT,
   
+  -- 评价
+  has_review INTEGER DEFAULT 0,
+
   -- 退款
   refund_amount REAL DEFAULT 0,
   refund_reason TEXT,
@@ -343,13 +370,19 @@ CREATE TABLE IF NOT EXISTS review (
   user_id TEXT NOT NULL,
   food_court_id TEXT,
   stall_id TEXT,
+  dish_id TEXT,
   order_id TEXT NOT NULL,
   order_item_id TEXT,
-  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+  overall_rating INTEGER NOT NULL CHECK (overall_rating >= 1 AND overall_rating <= 5),
+  food_rating INTEGER CHECK (food_rating >= 1 AND food_rating <= 5),
   content TEXT,
   content_en TEXT,
   image_urls TEXT,
+  content_images TEXT,
   is_public INTEGER DEFAULT 1,
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'hidden')),
+  moderation_status TEXT DEFAULT 'pending' CHECK (moderation_status IN ('pending', 'approved', 'rejected')),
   admin_reply TEXT,
   admin_replied_at TEXT,
   created_at TEXT DEFAULT (datetime('now')),
@@ -420,22 +453,35 @@ CREATE TABLE IF NOT EXISTS promotion (
   stall_id TEXT,
   name TEXT NOT NULL,
   description TEXT,
+  promotion_type TEXT CHECK (promotion_type IN ('discount', 'coupon', 'flash_sale', 'bundle', 'first_order', 'loyalty')),
   discount_type TEXT CHECK (discount_type IN ('percentage', 'fixed', 'buy_x_get_y')),
   discount_value REAL,
   buy_quantity INTEGER,
   get_quantity INTEGER,
   min_item_count INTEGER,
+  min_order_amount REAL DEFAULT 0,
+  max_discount_amount REAL,
+  usage_limit_per_user INTEGER,
+  total_usage_limit INTEGER,
   applicable_items TEXT,
+  applicable_stalls TEXT,
+  applicable_dishes TEXT,
+  code TEXT,
   start_time TEXT,
   end_time TEXT,
   is_active INTEGER DEFAULT 1,
+  status TEXT DEFAULT 'active' CHECK (status IN ('draft', 'active', 'paused', 'expired')),
+  created_by TEXT,
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now')),
+  deleted_at TEXT,
   FOREIGN KEY (food_court_id) REFERENCES food_court(id) ON DELETE CASCADE,
   FOREIGN KEY (stall_id) REFERENCES stall(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_promotion_active ON promotion(is_active, start_time, end_time);
+CREATE INDEX IF NOT EXISTS idx_promotion_status ON promotion(status);
+CREATE INDEX IF NOT EXISTS idx_promotion_code ON promotion(code);
 
 -- ============================================================
 -- 15. 翻译资源表
@@ -496,7 +542,60 @@ CREATE TABLE IF NOT EXISTS translation_queue (
 CREATE INDEX IF NOT EXISTS idx_translation_queue_status ON translation_queue(status, priority);
 
 -- ============================================================
--- 18. 系统配置表
+-- 18. Webhook日志表
+-- ============================================================
+CREATE TABLE IF NOT EXISTS webhook_log (
+  id TEXT PRIMARY KEY,
+  webhook_type TEXT,
+  provider TEXT,
+  payload TEXT,
+  order_id TEXT,
+  status TEXT DEFAULT 'received' CHECK (status IN ('received', 'processing', 'success', 'failed', 'retrying')),
+  error_message TEXT,
+  retry_count INTEGER DEFAULT 0,
+  last_retry_at TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (order_id) REFERENCES user_order(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_webhook_log_order ON webhook_log(order_id);
+CREATE INDEX IF NOT EXISTS idx_webhook_log_status ON webhook_log(status);
+
+-- ============================================================
+-- 19. 评论举报表
+-- ============================================================
+CREATE TABLE IF NOT EXISTS review_report (
+  id TEXT PRIMARY KEY,
+  review_id TEXT NOT NULL,
+  reporter_id TEXT,
+  reason TEXT,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'reviewed', 'dismissed')),
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (review_id) REFERENCES review(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_review_report_review ON review_report(review_id);
+
+-- ============================================================
+-- 20. 促销使用记录表
+-- ============================================================
+CREATE TABLE IF NOT EXISTS promotion_usage (
+  id TEXT PRIMARY KEY,
+  promotion_id TEXT NOT NULL,
+  user_id TEXT,
+  order_id TEXT,
+  usage_count INTEGER DEFAULT 1,
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (promotion_id) REFERENCES promotion(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE SET NULL,
+  FOREIGN KEY (order_id) REFERENCES user_order(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_promotion_usage_promotion ON promotion_usage(promotion_id);
+CREATE INDEX IF NOT EXISTS idx_promotion_usage_user ON promotion_usage(user_id);
+
+-- ============================================================
+-- 21. 系统配置表
 -- ============================================================
 CREATE TABLE IF NOT EXISTS system_config (
   id TEXT PRIMARY KEY,

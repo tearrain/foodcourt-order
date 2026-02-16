@@ -37,7 +37,7 @@ export const getFoodCourts = (params?: Record<string, any>) => api.get('/food-co
 
 // Stalls
 export const getStalls = (foodCourtId: string, params?: Record<string, any>) =>
-  api.get(`/food-courts/${foodCourtId}/stalls`, { params })
+  api.get('/stalls', { params: { ...params, food_court_id: foodCourtId } })
 export const getStall = (id: string) => api.get(`/stalls/${id}`)
 export const getStallDishes = (id: string, params?: Record<string, any>) =>
   api.get(`/stalls/${id}/dishes`, { params })

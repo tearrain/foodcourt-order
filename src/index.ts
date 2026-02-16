@@ -61,7 +61,7 @@ const getCorsOrigin = (): string[] => {
 app.use('/*', cors({
   origin: getCorsOrigin(),
   allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization', 'Accept-Language'],
+  allowHeaders: ['Content-Type', 'Authorization', 'Accept-Language', 'X-Session-ID'],
   credentials: true,
 }));
 
@@ -72,6 +72,11 @@ app.use('/*', logger());
 app.use('/*', async (c, next) => {
   const lang = c.req.header('Accept-Language')?.split(',')[0] || config.languages.default;
   c.set('lang', lang);
+  // Session ID for guest users
+  const sessionId = c.req.header('X-Session-ID');
+  if (sessionId) {
+    c.set('sessionId', sessionId);
+  }
   await next();
 });
 

@@ -99,35 +99,16 @@ dishRoutes.get('/', async (c) => {
   bindings.push(limit, offset);
   
   const result = await db.prepare(query).bind(...bindings).all();
-  
-  // Get total count
-  const countResult = await db.prepare(`
-    SELECT COUNT(*) as total FROM dish d
-    WHERE d.deleted_at IS NULL
-    ${stallId ? 'AND d.stall_id = ?' : ''}
-  `).bind(stallId || '').first();
-  
+
   // Translate dish names based on language
-  const translatedResults = await Promise.all(
-    result.results.map(async (dish: any) => {
-      if (lang !== 'zh-CN' && dish.name_en) {
-        return { ...dish, display_name: dish.name_en };
-      }
-      return { ...dish, display_name: dish.name };
-    })
-  );
-  
-  return c.json(response({
-    data: translatedResults,
-    meta: {
-      page,
-      limit,
-      total: countResult?.total || 0,
-      totalPages: Math.ceil((countResult?.total || 0) / limit),
-      hasNext: page * limit < (countResult?.total || 0),
-      hasPrev: page > 1,
-    },
-  }));
+  const translatedResults = (result.results || []).map((dish: any) => {
+    if (lang !== 'zh-CN' && dish.name_en) {
+      return { ...dish, display_name: dish.name_en };
+    }
+    return { ...dish, display_name: dish.name };
+  });
+
+  return c.json(response(translatedResults));
 });
 
 // ==================== Get Dish ====================
@@ -202,8 +183,8 @@ dishRoutes.get('/recommended', async (c) => {
   bindings.push(limit);
   
   const result = await db.prepare(query).bind(...bindings).all();
-  
-  return c.json(response(result));
+
+  return c.json(response(result.results || []));
 });
 
 // ==================== Search Dishes ====================
@@ -218,20 +199,18 @@ dishRoutes.get('/search', async (c) => {
   const offset = (page - 1) * limit;
   
   if (!q || q.length < 2) {
-    return c.json(response({
-      data: [],
-      meta: { page, limit, total: 0 },
-    }));
+    return c.json(response([]));
   }
-  
+
+  const searchTerm = `%${q}%`;
+
   let query = `
-    SELECT 
+    SELECT
       d.*,
-      s.name as stall_name,
-      MATCH(d.name, d.name_en, d.description, d.description_en) AGAINST(? IN BOOLEAN MODE) as relevance
+      s.name as stall_name
     FROM dish d
     LEFT JOIN stall s ON d.stall_id = s.id
-    WHERE d.deleted_at IS NULL 
+    WHERE d.deleted_at IS NULL
       AND d.status = 'active'
       AND d.is_available = 1
       AND (
@@ -239,24 +218,20 @@ dishRoutes.get('/search', async (c) => {
         OR d.description_en LIKE ?
       )
   `;
-  
-  const searchTerm = `%${q}%`;
-  const bindings = [q, searchTerm, searchTerm, searchTerm, searchTerm];
-  
+
+  const bindings: any[] = [searchTerm, searchTerm, searchTerm, searchTerm];
+
   if (foodCourtId) {
     query += ` AND s.food_court_id = ?`;
     bindings.push(foodCourtId);
   }
-  
-  query += ` ORDER BY relevance DESC, d.avg_rating DESC LIMIT ? OFFSET ?`;
+
+  query += ` ORDER BY d.avg_rating DESC, d.total_sold DESC LIMIT ? OFFSET ?`;
   bindings.push(limit, offset);
-  
+
   const result = await db.prepare(query).bind(...bindings).all();
-  
-  return c.json(response({
-    data: result.results,
-    meta: { page, limit, total: result.results?.length || 0 },
-  }));
+
+  return c.json(response(result.results || []));
 });
 
 // ==================== Create Dish ====================

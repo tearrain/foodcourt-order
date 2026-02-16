@@ -10,36 +10,36 @@
 
 INSERT INTO food_court (
   id, name, name_en, description, description_en, address, city,
-  latitude, longitude, contact_phone, image_url, is_active
+  latitude, longitude, contact_phone, image_url, is_active, status
 ) VALUES (
   'fc001', 'KLCC 食阁', 'KLCC Food Court',
   '吉隆坡市中心最大美食广场，汇集马来西亚各地特色美食',
   'The largest food court in downtown Kuala Lumpur with Malaysian specialties',
   'Jalan Ampang, Kuala Lumpur', 'Kuala Lumpur',
   3.158069, 101.711549, '+60 3-1234 5678',
-  'https://example.com/klcc-food-court.jpg', 1
+  'https://example.com/klcc-food-court.jpg', 1, 'active'
 );
 
 INSERT INTO food_court (
   id, name, name_en, description, description_en, address, city,
-  contact_phone, is_active
+  contact_phone, is_active, status
 ) VALUES (
   'fc002', '武吉免登美食城', 'Pavilion Food Garden',
   '武吉免登广场美食城，汇聚国际料理',
   'Bukit Bintang food court with international cuisine',
   'Jalan Bukit Bintang, Kuala Lumpur', 'Kuala Lumpur',
-  '+60 3-9876 5432', 1
+  '+60 3-9876 5432', 1, 'active'
 );
 
 INSERT INTO food_court (
   id, name, name_en, description, description_en, address, city,
-  contact_phone, is_active
+  contact_phone, is_active, status
 ) VALUES (
   'fc003', '双威金字塔美食广场', 'Sunway Pyramid Food Court',
   '双威度假区主题公园旁的美食广场',
   'Food court near Sunway Theme Park resort area',
   'Jalan Lagoon Selatan, Bandar Sunway', 'Petaling Jaya',
-  '+60 3-5632 1890', 1
+  '+60 3-5632 1890', 1, 'active'
 );
 
 -- ============================================================
