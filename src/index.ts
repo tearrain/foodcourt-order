@@ -42,24 +42,33 @@ const getAuthService = (env: Env): AuthService => {
 
 // ==================== CORS Configuration ====================
 
-const getCorsOrigin = (): string[] => {
-  // 生产环境允许的域名
-  if (config.env === 'production') {
-    return [
-      'http://localhost:5173',
-      'http://localhost:3000',
-      // 用户可以添加自己的前端域名
-    ];
+const getCorsOrigin = (origin: string): string => {
+  const allowedOrigins = [
+    'https://foodcourt-order.pages.dev',
+    'https://foodcourt-admin.pages.dev',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost:3001',
+  ];
+  if (allowedOrigins.includes(origin)) {
+    return origin;
   }
-  // 开发环境允许所有
-  return ['*'];
+  // Allow *.pages.dev subdomains (preview deployments)
+  if (origin && /^https:\/\/[\w-]+\.pages\.dev$/.test(origin)) {
+    return origin;
+  }
+  // Dev mode: allow all origins
+  if (config.env !== 'production') {
+    return origin || '*';
+  }
+  return allowedOrigins[0];
 };
 
 // ==================== Middleware ====================
 
 // CORS
 app.use('/*', cors({
-  origin: getCorsOrigin(),
+  origin: getCorsOrigin,
   allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization', 'Accept-Language', 'X-Session-ID'],
   credentials: true,
