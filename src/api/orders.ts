@@ -63,20 +63,8 @@ orderRoutes.get('/', async (c) => {
   bindings.push(limit, offset);
   
   const result = await db.prepare(query).bind(...bindings).all();
-  
-  const countResult = await db.prepare(`
-    SELECT COUNT(*) as total FROM user_order WHERE user_id = ?
-  `).bind(userId).first();
-  
-  return c.json(response({
-    data: result.results,
-    meta: {
-      page,
-      limit,
-      total: countResult?.total || 0,
-      hasNext: page * limit < (countResult?.total || 0),
-    },
-  }));
+
+  return c.json(response(result.results || []));
 });
 
 // ==================== Get Order ====================
@@ -215,7 +203,7 @@ orderRoutes.post('/', async (c) => {
         order_id, dish_id, dish_snapshot, stall_id, stall_name,
         quantity, unit_price, original_price, subtotal_amount,
         customization_details, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
     `).bind(
       orderId,
       item.dish_id,

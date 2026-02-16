@@ -56,45 +56,28 @@ foodCourtRoutes.get('/', async (c) => {
   
   const bindings: any[] = [];
   
-  // Location filter
+  // Location filter (approximate bounding box for SQLite)
   if (lat && lng) {
+    const latDelta = radius / 111.0;
+    const lngDelta = radius / (111.0 * Math.cos(lat * Math.PI / 180));
     query += `
       AND (
-        fc.latitude IS NULL 
+        fc.latitude IS NULL
         OR (
-          6371 * acos(
-            cos(radians(?)) * cos(radians(fc.latitude)) *
-            cos(radians(fc.longitude) - radians(?)) +
-            sin(radians(?)) * sin(radians(fc.latitude))
-          )
-        ) <= ?
+          fc.latitude BETWEEN ? AND ?
+          AND fc.longitude BETWEEN ? AND ?
+        )
       )
     `;
-    bindings.push(lat, lng, lat, radius);
+    bindings.push(lat - latDelta, lat + latDelta, lng - lngDelta, lng + lngDelta);
   }
   
   query += ` GROUP BY fc.id ORDER BY fc.created_at DESC LIMIT ? OFFSET ?`;
   bindings.push(limit, offset);
   
   const result = await db.prepare(query).bind(...bindings).all();
-  
-  // Get total count
-  const countResult = await db.prepare(`
-    SELECT COUNT(*) as total FROM food_court 
-    WHERE deleted_at IS NULL AND status = 'active'
-  `).first();
-  
-  return c.json(response({
-    data: result.results,
-    meta: {
-      page,
-      limit,
-      total: countResult?.total || 0,
-      totalPages: Math.ceil((countResult?.total || 0) / limit),
-      hasNext: page * limit < (countResult?.total || 0),
-      hasPrev: page > 1,
-    },
-  }));
+
+  return c.json(response(result.results || []));
 });
 
 // ==================== Get Food Court ====================

@@ -54,21 +54,8 @@ stallRoutes.get('/', async (c) => {
   bindings.push(limit, offset);
   
   const result = await db.prepare(query).bind(...bindings).all();
-  
-  const countResult = await db.prepare(`
-    SELECT COUNT(*) as total FROM stall 
-    WHERE deleted_at IS NULL AND is_active = 1 ${foodCourtId ? 'AND food_court_id = ?' : ''}
-  `).bind(foodCourtId || '').first();
-  
-  return c.json(response({
-    data: result.results,
-    meta: {
-      page,
-      limit,
-      total: countResult?.total || 0,
-      hasNext: page * limit < (countResult?.total || 0),
-    },
-  }));
+
+  return c.json(response(result.results || []));
 });
 
 // ==================== Get Stall ====================
