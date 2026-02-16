@@ -7,8 +7,8 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "build": "esbuild src/index.ts --bundle --outfile=dist/index.js --platform=neutral --format=esm --target=es2020",
-    "build:worker": "esbuild src/index.ts --bundle --outfile=dist/index.js --platform=neutral --format=esm --target=es2020 --loader:.ts=ts",
+    "build": "wrangler deploy --dry-run --outdir=dist",
+    "build:worker": "wrangler deploy --dry-run --outdir=dist",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "lint": "eslint src --ext .ts",

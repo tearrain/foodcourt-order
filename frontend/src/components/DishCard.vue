@@ -27,7 +27,9 @@ const emit = defineEmits<{ (e: 'click', dish: any): void }>()
 const { t, locale } = useI18n()
 const cartStore = useCartStore()
 
-const displayName = $computed(() =>
+import { computed } from 'vue'
+
+const displayName = computed(() =>
   locale.value === 'en' && props.dish.name_en ? props.dish.name_en : props.dish.name
 )
 
