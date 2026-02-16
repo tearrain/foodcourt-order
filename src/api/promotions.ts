@@ -21,8 +21,8 @@ const createPromotionSchema = z.object({
   total_usage_limit: z.number().int().min(0).optional(),
   start_time: z.string().datetime(),
   end_time: z.string().datetime(),
-  applicable_stalls: z.array(z.string().uuid()).optional(),
-  applicable_dishes: z.array(z.string().uuid()).optional(),
+  applicable_stalls: z.array(z.string().min(1)).optional(),
+  applicable_dishes: z.array(z.string().min(1)).optional(),
   code: z.string().optional(),
 });
 
@@ -30,7 +30,7 @@ const updatePromotionSchema = createPromotionSchema.partial();
 
 const redeemCouponSchema = z.object({
   code: z.string().min(4).max(20),
-  order_id: z.string().uuid().optional(),
+  order_id: z.string().min(1).optional(),
 });
 
 export const promotionRoutes = new Hono<AppType>();

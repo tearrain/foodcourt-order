@@ -10,12 +10,12 @@ import { generateUUID } from '../utils/db';
 
 // Validation Schemas
 const createOrderSchema = z.object({
-  food_court_id: z.string().uuid(),
+  food_court_id: z.string().min(1),
   order_type: z.enum(['dine_in', 'takeout', 'delivery']).default('dine_in'),
   table_number: z.string().optional(),
-  cart_id: z.string().uuid().optional(),
+  cart_id: z.string().min(1).optional(),
   items: z.array(z.object({
-    dish_id: z.string().uuid(),
+    dish_id: z.string().min(1),
     quantity: z.number().int().positive(),
     customizations: z.array(z.object({
       group: z.string(),
@@ -25,7 +25,7 @@ const createOrderSchema = z.object({
   })).optional(),
   coupon_code: z.string().optional(),
   user_remark: z.string().optional(),
-  delivery_address_id: z.string().uuid().optional(),
+  delivery_address_id: z.string().min(1).optional(),
 });
 
 const cancelOrderSchema = z.object({

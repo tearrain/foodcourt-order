@@ -9,8 +9,8 @@ import { response } from '../utils/response';
 
 // Validation Schemas
 const addToCartSchema = z.object({
-  food_court_id: z.string().uuid(),
-  dish_id: z.string().uuid(),
+  food_court_id: z.string().optional(),
+  dish_id: z.string().min(1),
   quantity: z.number().int().positive().default(1),
   customizations: z.array(z.object({
     group: z.string(),
@@ -20,9 +20,9 @@ const addToCartSchema = z.object({
 });
 
 const batchAddToCartSchema = z.object({
-  food_court_id: z.string().uuid(),
+  food_court_id: z.string().optional(),
   items: z.array(z.object({
-    dish_id: z.string().uuid(),
+    dish_id: z.string().min(1),
     quantity: z.number().int().positive(),
     customizations: z.array(z.object({
       group: z.string(),
@@ -132,20 +132,24 @@ cartRoutes.post('/items', async (c) => {
   
   const data = validation.data;
   
-  // Check dish availability
+  // Check dish availability and get food_court_id from stall
   const dish = await db.prepare(`
-    SELECT * FROM dish 
-    WHERE id = ? AND deleted_at IS NULL
-  `).bind(data.dish_id).first();
-  
+    SELECT d.*, s.food_court_id
+    FROM dish d
+    JOIN stall s ON d.stall_id = s.id
+    WHERE d.id = ? AND d.deleted_at IS NULL
+  `).bind(data.dish_id).first() as any;
+
   if (!dish) {
     return c.json(response(null, 40401, 'Dish not found'), 404);
   }
-  
+
   if (!dish.is_available || dish.is_sold_out) {
     return c.json(response(null, 40402, 'Dish sold out or unavailable'), 400);
   }
-  
+
+  const foodCourtId = data.food_court_id || dish.food_court_id;
+
   // Check if item already in cart
   const existing = await db.prepare(`
     SELECT * FROM cart
@@ -159,28 +163,28 @@ cartRoutes.post('/items', async (c) => {
     data.dish_id,
     JSON.stringify(data.customizations)
   ).first();
-  
+
   let result;
   if (existing) {
     // Update quantity
     const newQuantity = existing.quantity + data.quantity;
-    
+
     // Check max per order
     if (newQuantity > dish.max_per_order) {
       return c.json(response(null, 40005, `Maximum ${dish.max_per_order} per order`), 400);
     }
-    
+
     await db.prepare(`
-      UPDATE cart 
+      UPDATE cart
       SET quantity = ?, updated_at = datetime('now')
       WHERE id = ?
     `).bind(newQuantity, existing.id).run();
-    
+
     result = { id: existing.id, quantity: newQuantity };
   } else {
     // Insert new item
     const price = dish.price + data.customizations.reduce((sum, c) => sum + c.price_modifier, 0);
-    
+
     result = await db.prepare(`
       INSERT INTO cart (
         user_id, session_id, food_court_id, dish_id, quantity,
@@ -189,7 +193,7 @@ cartRoutes.post('/items', async (c) => {
     `).bind(
       userId || null,
       sessionId,
-      data.food_court_id,
+      foodCourtId,
       data.dish_id,
       data.quantity,
       JSON.stringify(data.customizations),
@@ -199,7 +203,7 @@ cartRoutes.post('/items', async (c) => {
         image_url: dish.image_url,
       })
     ).run();
-    
+
     result = { id: result.meta.last_row_id, quantity: data.quantity };
   }
   

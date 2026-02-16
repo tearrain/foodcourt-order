@@ -10,12 +10,12 @@ import { TranslationService } from '../services/translation';
 
 // Validation Schemas
 const createDishSchema = z.object({
-  stall_id: z.string().uuid(),
+  stall_id: z.string().min(1),
   name: z.string().min(1).max(255),
   name_en: z.string().optional(),
   description: z.string().optional(),
   description_en: z.string().optional(),
-  category_id: z.string().uuid().optional(),
+  category_id: z.string().min(1).optional(),
   price: z.number().positive(),
   original_price: z.number().positive().optional(),
   cost_price: z.number().positive().optional(),
@@ -42,7 +42,7 @@ const updateDishSchema = createDishSchema.partial();
 
 const batchStockSchema = z.object({
   dishes: z.array(z.object({
-    dish_id: z.string().uuid(),
+    dish_id: z.string().min(1),
     quantity: z.number().int(),
   })),
 });
