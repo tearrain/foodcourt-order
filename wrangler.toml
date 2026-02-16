@@ -11,7 +11,7 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "foodcourt_order"
-database_id = "YOUR_D1_DATABASE_ID"
+database_id = "4cd9e763-3cae-4b93-b1b6-8153f6e3df78"
 
 # KV Namespace - Create with: wrangler kv namespace create CACHE
 # [[kv_namespaces]]
